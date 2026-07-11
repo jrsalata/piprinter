@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>To-Do</title>
+  <link rel="stylesheet" href="layout.css" type="text/css">
+</head>
+
+<body>
+  <h1>Create Task</h1>
+
+  % if 'error' in locals():
+  <p style="color:red">{{error}}</p>
+  % end
+
+  % if 'success' in locals():
+  <p style="color:green">{{success}}</p>
+  % end
+
+  <form method="POST">
+    <label>Title:<br><input type="text" name="title"></label><br><br>
+    <label>Priority:<br>
+      <select name="priority">
+        <option>high</option>
+        <option selected>medium</option>
+        <option>low</option>
+        <option>none</option>
+      </select>
+    </label><br><br>
+    <label>Est. Time:<br>
+      <select name="est_time">
+        <option>really long</option>
+        <option>long</option>
+        <option selected>medium</option>
+        <option>short</option>
+        <option>quick</option>
+      </select>
+    </label><br><br>
+    <label>Body:<br><textarea name="body" rows="5" cols="40"></textarea></label><br><br>
+    <label>Due Date:<br><input type="date" name="due_date" va></label><br><br>
+    <button type="submit">Create Ticket</button>
+  </form>
+</body>
+
+</html>

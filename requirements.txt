@@ -1,0 +1,2 @@
+bottle
+python-escpos[all]

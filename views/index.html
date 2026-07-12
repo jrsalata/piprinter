@@ -3,48 +3,70 @@
 
 <head>
   <title>To-Do</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="layout.css" type="text/css">
 </head>
 
 <body>
-  <h1>Create Task</h1>
+  <div class="page">
+    <h1>Create Task</h1>
 
-  % if 'error' in locals():
-  <p style="color:red">{{error}}</p>
-  % end
+    % if 'error' in locals():
+    <div class="alert alert-error">
+      <span class="alert-icon">&#10005;</span>
+      <span>{{error}}</span>
+    </div>
+    % end
 
-  % if 'success' in locals():
-  <p style="color:green">{{success}}</p>
-  % end
+    % if 'success' in locals():
+    <div class="alert alert-success">
+      <span class="alert-icon">&#10003;</span>
+      <span>{{success}}</span>
+    </div>
+    % end
 
-  % if 'status' in locals():
-  <p>Printer Status: {{'Ready' if status['ready'] else 'Not Ready'}}</p>
-  <p>Paper: {{status['paper']}}</p>
-  % end
+    % if 'status' in locals():
+    <div class="status-bar">
+      <span class="status-pill {{'status-ok' if status['ready'] else 'status-bad'}}">
+        <span class="status-dot"></span>
+        {{'Printer Ready' if status['ready'] else 'Printer Offline'}};
+      </span>
+      <span class="status-pill">
+        {{status['paper']}}
+      </span>
+    </div>
+    % end
 
-  <form method="POST">
-    <label>Title:<br><input type="text" name="title"></label><br><br>
-    <label>Priority:<br>
-      <select name="priority">
-        <option>high</option>
-        <option selected>medium</option>
-        <option>low</option>
-        <option>none</option>
-      </select>
-    </label><br><br>
-    <label>Est. Time:<br>
-      <select name="est_time">
-        <option>really long</option>
-        <option>long</option>
-        <option selected>medium</option>
-        <option>short</option>
-        <option>quick</option>
-      </select>
-    </label><br><br>
-    <label>Body:<br><textarea name="body" rows="5" cols="40"></textarea></label><br><br>
-    <label>Due Date:<br><input type="date" name="due_date"></label><br><br>
-    <button type="submit">Create Ticket</button>
-  </form>
+    <form method="POST">
+      <label>Title<br><input type="text" name="title" placeholder="What needs to get done?" required></label>
+
+      <div class="field-row">
+        <label>Priority <span class="optional">(optional)</span><br>
+          <select name="priority">
+            <option value="" selected>&mdash;</option>
+            <option>high</option>
+            <option>medium</option>
+            <option>low</option>
+          </select>
+        </label>
+        <label>Est. Time <span class="optional">(optional)</span><br>
+          <select name="est_time">
+            <option value="" selected>&mdash;</option>
+            <option>really long</option>
+            <option>long</option>
+            <option>medium</option>
+            <option>short</option>
+            <option>quick</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Due Date <span class="optional">(optional)</span><br><input type="date" name="due_date"></label>
+      <label>Notes <span class="optional">(optional)</span><br><textarea name="body" rows="5" placeholder="Any extra details..."></textarea></label>
+
+      <button type="submit" {{'disabled' if not status['ready'] else ''}}>Print Ticket</button>
+    </form>
+  </div>
 </body>
 
 </html>

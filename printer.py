@@ -33,17 +33,43 @@ def printer_status():
     return status
 
 def send_print(data):
+    title = (data.get('title') or '').strip()
+    if not title:
+        return False, "Title is required"
+
+    priority = (data.get('priority') or '').strip()
+    est_time = (data.get('est_time') or '').strip()
+    due_date = (data.get('due_date') or '').strip()
+    body = (data.get('body') or '').strip()
+
     try:
         printer.open()
-        printer.textln(data['title'])
+
+        printer.set(align='center', bold=True, double_width=True, double_height=True)
+        printer.textln(title)
+        printer.set(align='left', bold=False, double_width=False, double_height=False)
+
+        meta = []
+        if priority:
+            meta.append(f"Priority: {priority}")
+        if est_time:
+            meta.append(f"Estimated Time: {est_time}")
+        if due_date:
+            meta.append(f"Due Date: {due_date}")
+
+        if meta:
+            printer.ln()
+            for line in meta:
+                printer.textln(line)
+
+        if body:
+            printer.ln()
+            printer.textln("-" * 32)
+            printer.ln()
+            printer.textln(body)
+
         printer.ln()
-        printer.textln(f"Priority: {data['priority']}")
-        printer.textln(f"Estimated Time: {data['est_time']}")
-        printer.textln(f"Due Date: {data['due_date']}")
-        printer.ln()
-        printer.textln(data['body'])
         printer.cut()
         return True, None
     except Exception as e:
         return False, str(e)
-    

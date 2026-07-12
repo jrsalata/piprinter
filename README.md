@@ -8,6 +8,10 @@ It was heavily inspired by [this YouTube video](https://youtu.be/xg45b8UXoZI) on
 
 NOTE: I have ordered my printer as of writing this README, but have not received it yet for testing. Your mileage may vary.
 
+## AI-usage disclaimer
+
+This project is labeled as [AI-Reviewed](https://salata.software/about/ai/#ai-reviewed). The majority of the project was written by myself with further updates to styling and appearance from Claude code.
+
 ## Installation
 
 Python 3.12 is required

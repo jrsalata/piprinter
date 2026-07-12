@@ -17,6 +17,11 @@
   <p style="color:green">{{success}}</p>
   % end
 
+  % if 'status' in locals():
+  <p>Printer Status: {{'Ready' if status['ready'] else 'Not Ready'}}</p>
+  <p>Paper: {{status['paper']}}</p>
+  % end
+
   <form method="POST">
     <label>Title:<br><input type="text" name="title"></label><br><br>
     <label>Priority:<br>
@@ -37,7 +42,7 @@
       </select>
     </label><br><br>
     <label>Body:<br><textarea name="body" rows="5" cols="40"></textarea></label><br><br>
-    <label>Due Date:<br><input type="date" name="due_date" va></label><br><br>
+    <label>Due Date:<br><input type="date" name="due_date"></label><br><br>
     <button type="submit">Create Ticket</button>
   </form>
 </body>

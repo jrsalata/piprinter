@@ -1,0 +1,16 @@
+[Unit]
+Description=Piprinter webserver
+After=network.target
+
+[Service]
+Type=simple
+User=username
+Group=username
+WorkingDirectory=/home/username/piprinter/
+ExecStart=/home/username/piprinter/.venv/bin/activate -u main.py
+Restart=always
+RestartSec=5
+Environment="PIPRINTER_CONFIG_PATH=/path/to/printer,PIPRINTER_LISTEN_IP=localhost,PIPRINTER_PORT=8080"
+
+[Install]
+WantedBy=multi-user.target

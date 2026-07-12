@@ -1,11 +1,9 @@
 from escpos import config, printer
 from escpos import *
 
-printer_config = config.Config()
-printer_config.load("config.example.yaml")
 
-printer = printer_config.printer()
-print(printer.is_usable())
+# global printer defined at initial load
+printer = None
 
 def load_printer(config_file="config.example.yaml"):
     global printer

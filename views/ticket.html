@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>To-Do</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="layout.css" type="text/css">
+</head>
+
+<body>
+  <div class="page">
+    <nav class="top-nav">
+      <a href="/">&larr; Templates</a>
+      <a href="/builder">Custom Builder</a>
+    </nav>
+
+    <h1>Create Task</h1>
+
+    <div id="message"></div>
+
+    % if 'status' in locals():
+    <div class="status-bar">
+      <span class="status-pill {{'status-ok' if status['ready'] else 'status-bad'}}">
+        <span class="status-dot"></span>
+        {{'Printer Ready' if status['ready'] else 'Printer Offline'}};
+      </span>
+      <span class="status-pill">
+        {{status['paper']}}
+      </span>
+    </div>
+    % end
+
+    <form id="ticket-form">
+      <label>Title<br><input type="text" name="title" placeholder="What needs to get done?" required></label>
+
+      <div class="field-row">
+        <label>Priority <span class="optional">(optional)</span><br>
+          <select name="priority">
+            <option value="" selected>&mdash;</option>
+            <option>high</option>
+            <option>medium</option>
+            <option>low</option>
+          </select>
+        </label>
+        <label>Est. Time <span class="optional">(optional)</span><br>
+          <select name="est_time">
+            <option value="" selected>&mdash;</option>
+            <option>really long</option>
+            <option>long</option>
+            <option>medium</option>
+            <option>short</option>
+            <option>quick</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Due Date <span class="optional">(optional)</span><br><input type="date" name="due_date"></label>
+      <label>Notes <span class="optional">(optional)</span><br><textarea name="body" rows="5" placeholder="Any extra details..."></textarea></label>
+
+      <button type="submit" id="print-btn" {{'disabled' if not status['ready'] else ''}}>Print Ticket</button>
+    </form>
+  </div>
+
+  <script>
+    // Builds the same block list the old server-side send_print() hardcoded,
+    // but as data through the generic /builder pipeline so there's a single
+    // code path for turning blocks into a print job.
+    function buildTicketBlocks(form) {
+      const title = form.title.value.trim();
+      const priority = form.priority.value.trim();
+      const estTime = form.est_time.value.trim();
+      const dueDate = form.due_date.value.trim();
+      const body = form.body.value.trim();
+
+      const blocks = [{ type: 'title', text: title }];
+
+      const meta = [];
+      if (priority) meta.push(`Priority: ${priority}`);
+      if (estTime) meta.push(`Estimated Time: ${estTime}`);
+      if (dueDate) meta.push(`Due Date: ${dueDate}`);
+
+      if (meta.length) {
+        blocks.push({ type: 'newline' });
+        for (const line of meta) {
+          blocks.push({ type: 'text', text: line });
+        }
+      }
+
+      if (body) {
+        blocks.push({ type: 'newline' });
+        blocks.push({ type: 'divider' });
+        blocks.push({ type: 'newline' });
+        blocks.push({ type: 'text', text: body });
+      }
+
+      blocks.push({ type: 'newline' });
+
+      return blocks;
+    }
+
+    const messageEl = document.getElementById('message');
+
+    function showMessage(text, isError) {
+      messageEl.innerHTML = `<div class="alert ${isError ? 'alert-error' : 'alert-success'}">
+        <span class="alert-icon">${isError ? '&#10005;' : '&#10003;'}</span>
+        <span>${text}</span>
+      </div>`;
+    }
+
+    document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const title = form.title.value.trim();
+      if (!title) {
+        showMessage('Title is required', true);
+        return;
+      }
+
+      const printBtn = document.getElementById('print-btn');
+      printBtn.disabled = true;
+
+      try {
+        const res = await fetch('/builder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blocks: buildTicketBlocks(form) }),
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          showMessage(`Task ${title} created successfully!`, false);
+        } else {
+          showMessage(result.error || 'Failed to print.', true);
+        }
+      } catch (err) {
+        showMessage(err.message, true);
+      } finally {
+        printBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>

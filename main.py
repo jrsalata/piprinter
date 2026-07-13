@@ -1,26 +1,33 @@
 import os
-from bottle import route, post, run, request, static_file, template
-from printer import load_printer, printer_status, send_print
+from bottle import route, post, run, request, response, static_file, template
+from printer import load_printer, printer_status, print_blocks
 
 @route('/')
-@post('/')
 def index():
     status = printer_status()
-    if request.method == 'POST':
-        data = {
-            'title':      request.forms.get('title'),
-            'priority':   request.forms.get('priority'),
-            'est_time':   request.forms.get('est_time'),
-            'body':       request.forms.get('body'),
-            'due_date':   request.forms.get('due_date'),
-        }
-        result, err = send_print(data)
-        if result:
-            return template("index.html", success=f"Task {data['title']} created successfully!", status=status)
-        else:
-            return template("index.html", error=f"Failed to create task: {err}", status=status)
-    
     return template("index.html", status=status)
+
+@route('/ticket')
+def ticket():
+    status = printer_status()
+    return template("ticket.html", status=status)
+
+@route('/builder')
+def builder():
+    status = printer_status()
+    return template("builder.html", status=status)
+
+@post('/builder')
+def builder_print():
+    payload = request.json or {}
+    blocks = payload.get('blocks', [])
+
+    result, err = print_blocks(blocks)
+    if result:
+        return {"success": True}
+    else:
+        response.status = 422
+        return {"success": False, "error": err}
 
 @route('/<filepath:path>')
 def server_static(filepath):

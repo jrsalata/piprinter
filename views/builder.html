@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Custom Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="layout.css" type="text/css">
+</head>
+
+<body>
+  <div class="page">
+    <nav class="top-nav">
+      <a href="/">&larr; Templates</a>
+      <a href="/ticket">Quick Ticket</a>
+    </nav>
+
+    <h1>Custom Builder</h1>
+
+    <div id="message"></div>
+
+    % if 'status' in locals():
+    <div class="status-bar">
+      <span class="status-pill {{'status-ok' if status['ready'] else 'status-bad'}}" id="status-pill">
+        <span class="status-dot"></span>
+        {{'Printer Ready' if status['ready'] else 'Printer Offline'}};
+      </span>
+      <span class="status-pill">
+        {{status['paper']}}
+      </span>
+    </div>
+    % end
+
+    <form id="builder-form">
+      <div id="add-block-row">
+        <select id="block-type-select">
+          <option value="title">Title</option>
+          <option value="text" selected>Text</option>
+          <option value="divider">Divider</option>
+          <option value="newline">Blank Line</option>
+          <option value="qr">QR Code</option>
+          <option value="image">Image</option>
+        </select>
+        <button type="button" id="add-block-btn">Add Block</button>
+      </div>
+
+      <div id="block-list"></div>
+
+      <button type="submit" id="print-btn" {{'disabled' if not status['ready'] else ''}}>Print</button>
+    </form>
+  </div>
+
+  <template id="block-template">
+    <div class="builder-block" draggable="false">
+      <div class="builder-block-header">
+        <strong class="block-type-label"></strong>
+        <div class="builder-block-actions">
+          <button type="button" class="move-up">&uarr;</button>
+          <button type="button" class="move-down">&darr;</button>
+          <button type="button" class="remove-block">Remove</button>
+        </div>
+      </div>
+
+      <div class="block-fields"></div>
+
+      <details class="style-panel">
+        <summary>Style (optional)</summary>
+        <div class="style-grid">
+          <label>Align
+            <select data-style="align">
+              <option value="">&mdash;</option>
+              <option value="left">left</option>
+              <option value="center">center</option>
+              <option value="right">right</option>
+            </select>
+          </label>
+          <label>Font
+            <select data-style="font">
+              <option value="">&mdash;</option>
+              <option value="a">a</option>
+              <option value="b">b</option>
+            </select>
+          </label>
+          <label>Bold
+            <select data-style="bold" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Underline (0-2)
+            <input type="number" data-style="underline" data-style-type="int" min="0" max="2">
+          </label>
+          <label>Invert
+            <select data-style="invert" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Smooth
+            <select data-style="smooth" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Flip
+            <select data-style="flip" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Density (0-8)
+            <input type="number" data-style="density" data-style-type="int" min="0" max="8">
+          </label>
+          <label>Normal text size
+            <select data-style="normal_textsize" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Double width
+            <select data-style="double_width" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Double height
+            <select data-style="double_height" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Custom size
+            <select data-style="custom_size" data-style-type="bool">
+              <option value="">&mdash;</option>
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+          </label>
+          <label>Width (1-8, needs custom size)
+            <input type="number" data-style="width" data-style-type="int" min="1" max="8">
+          </label>
+          <label>Height (1-8, needs custom size)
+            <input type="number" data-style="height" data-style-type="int" min="1" max="8">
+          </label>
+        </div>
+      </details>
+    </div>
+  </template>
+
+  <template id="fields-text">
+    <label>Text<br><textarea data-field="text" rows="3" placeholder="Text to print" required></textarea></label>
+  </template>
+
+  <template id="fields-title">
+    <label>Title<br><input type="text" data-field="text" placeholder="Title" required></label>
+  </template>
+
+  <template id="fields-divider">
+  </template>
+
+  <template id="fields-newline">
+    <label>Count<br><input type="number" data-field="count" min="1" value="1"></label>
+  </template>
+
+  <template id="fields-qr">
+    <label>Data<br><input type="text" data-field="data" placeholder="URL or text to encode" required></label>
+    <div class="field-row">
+      <label>Size<br><input type="number" data-field="size" min="1" max="16" value="3"></label>
+      <label class="checkbox-row"><input type="checkbox" data-field="center" checked> Center</label>
+    </div>
+  </template>
+
+  <template id="fields-image">
+    <label>Image<br><input type="file" accept="image/*" data-field="image" required></label>
+    <label class="checkbox-row"><input type="checkbox" data-field="center" checked> Center</label>
+  </template>
+
+  <script>
+    const blockList = document.getElementById('block-list');
+    const blockTemplate = document.getElementById('block-template');
+    const typeLabels = { title: 'Title', text: 'Text', divider: 'Divider', newline: 'Blank Line', qr: 'QR Code', image: 'Image' };
+
+    function addBlock(type) {
+      const node = blockTemplate.content.cloneNode(true);
+      const blockEl = node.querySelector('.builder-block');
+      blockEl.dataset.type = type;
+      blockEl.querySelector('.block-type-label').textContent = typeLabels[type];
+
+      const fieldsTemplate = document.getElementById('fields-' + type);
+      blockEl.querySelector('.block-fields').appendChild(fieldsTemplate.content.cloneNode(true));
+
+      blockEl.querySelector('.move-up').addEventListener('click', () => {
+        const prev = blockEl.previousElementSibling;
+        if (prev) blockList.insertBefore(blockEl, prev);
+      });
+      blockEl.querySelector('.move-down').addEventListener('click', () => {
+        const next = blockEl.nextElementSibling;
+        if (next) blockList.insertBefore(next, blockEl);
+      });
+      blockEl.querySelector('.remove-block').addEventListener('click', () => blockEl.remove());
+
+      blockList.appendChild(blockEl);
+    }
+
+    document.getElementById('add-block-btn').addEventListener('click', () => {
+      addBlock(document.getElementById('block-type-select').value);
+    });
+
+    function readImageAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function collectStyle(blockEl) {
+      const style = {};
+      blockEl.querySelectorAll('[data-style]').forEach(input => {
+        const key = input.dataset.style;
+        const kind = input.dataset.styleType;
+        const raw = input.value;
+        if (raw === '') return;
+        if (kind === 'bool') style[key] = raw === 'true';
+        else if (kind === 'int') style[key] = parseInt(raw, 10);
+        else style[key] = raw;
+      });
+      return style;
+    }
+
+    async function collectBlocks() {
+      const blocks = [];
+      for (const blockEl of blockList.children) {
+        const type = blockEl.dataset.type;
+        const block = { type };
+        const style = collectStyle(blockEl);
+        if (Object.keys(style).length) block.style = style;
+
+        for (const input of blockEl.querySelectorAll('[data-field]')) {
+          const key = input.dataset.field;
+          if (input.type === 'checkbox') {
+            block[key] = input.checked;
+          } else if (input.type === 'file') {
+            const file = input.files[0];
+            if (file) block[key] = await readImageAsDataUrl(file);
+          } else if (input.type === 'number') {
+            block[key] = parseInt(input.value, 10);
+          } else {
+            block[key] = input.value;
+          }
+        }
+        blocks.push(block);
+      }
+      return blocks;
+    }
+
+    const messageEl = document.getElementById('message');
+
+    function showMessage(text, isError) {
+      messageEl.innerHTML = `<div class="alert ${isError ? 'alert-error' : 'alert-success'}">
+        <span class="alert-icon">${isError ? '&#10005;' : '&#10003;'}</span>
+        <span>${text}</span>
+      </div>`;
+    }
+
+    document.getElementById('builder-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const blocks = await collectBlocks();
+      if (!blocks.length) {
+        showMessage('Add at least one block before printing.', true);
+        return;
+      }
+
+      const printBtn = document.getElementById('print-btn');
+      printBtn.disabled = true;
+
+      try {
+        const res = await fetch('/builder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blocks }),
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          showMessage('Printed successfully!', false);
+        } else {
+          showMessage(result.error || 'Failed to print.', true);
+        }
+      } catch (err) {
+        showMessage(err.message, true);
+      } finally {
+        printBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>

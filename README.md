@@ -12,6 +12,8 @@ NOTE: I have ordered my printer as of writing this README, but have not received
 
 This project is labeled as [AI-Reviewed](https://salata.software/about/ai/#ai-reviewed). The majority of the project was written by myself with further updates to styling and appearance from Claude code.
 
+A majority of the front-end (styling, HTML, js) is Claude, while the PreprocessBuilder and most of the printer.py was originally written by myself.
+
 ## Installation
 
 Python 3.12 is required

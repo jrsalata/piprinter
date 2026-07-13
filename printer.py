@@ -1,6 +1,7 @@
 from escpos import config, printer
 from escpos import *
 
+from PreprocessBuilder import PreprocessBuilder
 
 # global printer defined at initial load
 printer = None
@@ -30,44 +31,19 @@ def printer_status():
     }
     return status
 
-def send_print(data):
-    title = (data.get('title') or '').strip()
-    if not title:
-        return False, "Title is required"
-
-    priority = (data.get('priority') or '').strip()
-    est_time = (data.get('est_time') or '').strip()
-    due_date = (data.get('due_date') or '').strip()
-    body = (data.get('body') or '').strip()
+def print_blocks(blocks):
+    if not blocks:
+        return False, "No blocks to print"
 
     try:
+        builder = PreprocessBuilder()
+        builder.build_from_blocks(blocks)
+        output = builder.get_commands()
+
         printer.open()
-
-        printer.set(align='center', bold=True, double_width=True, double_height=True)
-        printer.textln(title)
-        printer.set(align='left', bold=False, double_width=False, double_height=False)
-
-        meta = []
-        if priority:
-            meta.append(f"Priority: {priority}")
-        if est_time:
-            meta.append(f"Estimated Time: {est_time}")
-        if due_date:
-            meta.append(f"Due Date: {due_date}")
-
-        if meta:
-            printer.ln()
-            for line in meta:
-                printer.textln(line)
-
-        if body:
-            printer.ln()
-            printer.textln("-" * 32)
-            printer.ln()
-            printer.textln(body)
-
-        printer.ln()
-        printer.cut()
+        printer._raw(output)
+        printer.close()
         return True, None
     except Exception as e:
         return False, str(e)
+

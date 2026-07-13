@@ -73,6 +73,9 @@
       const body = form.body.value.trim();
 
       const blocks = [{ type: 'title', text: title }];
+      blocks.push({ type: 'newline' });
+      blocks.push({ type: 'divider' });
+      blocks.push({ type: 'newline' });
 
       const meta = [];
       if (priority) meta.push(`Priority: ${priority}`);

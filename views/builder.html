@@ -201,12 +201,19 @@
     // data (optional) prefills a block's fields/style from a saved template,
     // e.g. { text: 'hi', style: { align: 'center' }, image: 'data:...' }
     function addBlock(type, data = {}) {
+      const fieldsTemplate = document.getElementById('fields-' + type);
+      if (!fieldsTemplate) {
+        // Unknown block type (e.g. a hand-edited template file); skip it
+        // rather than throwing and leaving the form half-populated.
+        console.warn('Skipping unknown block type:', type);
+        return;
+      }
+
       const node = blockTemplate.content.cloneNode(true);
       const blockEl = node.querySelector('.builder-block');
       blockEl.dataset.type = type;
-      blockEl.querySelector('.block-type-label').textContent = typeLabels[type];
+      blockEl.querySelector('.block-type-label').textContent = typeLabels[type] || type;
 
-      const fieldsTemplate = document.getElementById('fields-' + type);
       blockEl.querySelector('.block-fields').appendChild(fieldsTemplate.content.cloneNode(true));
 
       for (const input of blockEl.querySelectorAll('[data-field]')) {
@@ -388,6 +395,14 @@
       saveNewBtn.textContent = id ? 'Save as New Template' : 'Save Template';
     }
 
+    // Disable the template action buttons while a request is in flight so a
+    // double-click can't fire two overlapping saves/deletes.
+    function setTemplateButtonsDisabled(disabled) {
+      saveNewBtn.disabled = disabled;
+      updateBtn.disabled = disabled;
+      deleteBtn.disabled = disabled;
+    }
+
     async function loadTemplate(id) {
       try {
         const res = await fetch(`/templates/${encodeURIComponent(id)}`);
@@ -411,6 +426,7 @@
         return;
       }
 
+      setTemplateButtonsDisabled(true);
       try {
         const blocks = await collectBlocks();
         if (!blocks.length) {
@@ -433,6 +449,8 @@
         }
       } catch (err) {
         showMessage(err.message, true);
+      } finally {
+        setTemplateButtonsDisabled(false);
       }
     });
 
@@ -444,6 +462,7 @@
         return;
       }
 
+      setTemplateButtonsDisabled(true);
       try {
         const blocks = await collectBlocks();
         if (!blocks.length) {
@@ -464,6 +483,8 @@
         }
       } catch (err) {
         showMessage(err.message, true);
+      } finally {
+        setTemplateButtonsDisabled(false);
       }
     });
 
@@ -471,6 +492,7 @@
       if (!currentTemplateId) return;
       if (!confirm('Delete this template? This cannot be undone.')) return;
 
+      setTemplateButtonsDisabled(true);
       try {
         const res = await fetch(`/templates/${encodeURIComponent(currentTemplateId)}`, { method: 'DELETE' });
         if (res.ok) {
@@ -485,6 +507,8 @@
         }
       } catch (err) {
         showMessage(err.message, true);
+      } finally {
+        setTemplateButtonsDisabled(false);
       }
     });
 

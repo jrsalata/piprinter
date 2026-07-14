@@ -53,15 +53,18 @@
         const templates = data.templates || [];
         if (!templates.length) return;
 
-        container.innerHTML = templates.map(t => `
+        container.innerHTML = templates.map(t => {
+          const count = t.block_count || 0;
+          return `
           <div class="template-card" data-id="${escapeHtml(t.id)}">
             <a class="template-card-link" href="/builder?id=${encodeURIComponent(t.id)}">
               <h2>${escapeHtml(t.name)}</h2>
-              <p>${t.blocks.length} block${t.blocks.length === 1 ? '' : 's'}</p>
+              <p>${count} block${count === 1 ? '' : 's'}</p>
             </a>
             <button type="button" class="template-delete-btn" title="Delete template">&#10005;</button>
           </div>
-        `).join('');
+        `;
+        }).join('');
 
         container.querySelectorAll('.template-delete-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
@@ -69,7 +72,7 @@
             const id = card.dataset.id;
             if (!confirm('Delete this template? This cannot be undone.')) return;
             try {
-              const res = await fetch(`/templates/${id}`, { method: 'DELETE' });
+              const res = await fetch(`/templates/${encodeURIComponent(id)}`, { method: 'DELETE' });
               if (res.ok) {
                 card.remove();
               } else {

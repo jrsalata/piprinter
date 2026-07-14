@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically run the Piprinter Jira ticket poll
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

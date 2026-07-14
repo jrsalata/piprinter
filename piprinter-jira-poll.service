@@ -1,0 +1,13 @@
+[Unit]
+Description=Piprinter Jira ticket poll
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=username
+Group=username
+WorkingDirectory=/home/username/piprinter/
+ExecStart=/home/username/piprinter/.venv/bin/python3 jira_poll.py
+Environment="PIPRINTER_CONFIG_PATH=/path/to/printer/config.yaml"
+Environment="JIRA_POLL_STATE_PATH=/home/username/piprinter/jira_poll_state.json"

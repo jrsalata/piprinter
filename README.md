@@ -40,3 +40,39 @@ Be sure to edit the service file with the appropriate username, config file, pat
 ### Printer Config
 
 I will redirect you to the [escpos docs](https://python-escpos.readthedocs.io/en/latest/index.html) on how to set up a config file. The example one is just a dummy for testing purposes.
+
+## Periodic Jira ticket printing
+
+`jira_poll.py` polls Jira for issues assigned to you and prints any tickets it hasn't printed before. It's built on top of [jira-cli](https://github.com/ankitpokhrel/jira-cli), a third-party command line tool for Jira.
+
+### Setup
+
+1. Install `jira-cli` (see its [installation docs](https://github.com/ankitpokhrel/jira-cli#installation)) and make sure the `jira` binary is on your `PATH`.
+2. Run `jira init` to authenticate and generate a config file. For headless setups, export `JIRA_API_TOKEN` (and `JIRA_AUTH_TYPE=bearer` for a personal access token) before running `jira init`.
+3. Verify it works: `jira issue list -a$(jira me)` should list your assigned issues.
+
+### Running the poll manually
+
+```bash
+python3 jira_poll.py
+```
+
+Only tickets not seen on a previous run are printed. Printed ticket keys are tracked in `jira_poll_state.json` (path configurable via `JIRA_POLL_STATE_PATH`) so re-running the script won't reprint the same ticket.
+
+Environment variables:
+
+- `PIPRINTER_CONFIG_PATH` — path to the escpos printer config (same variable used by `main.py`)
+- `JIRA_POLL_STATE_PATH` — where to store the set of already-printed ticket keys (default: `jira_poll_state.json` next to the script)
+- `JIRA_BIN` — path to the `jira` binary if it isn't on `PATH` (default: `jira`)
+
+### Running it periodically
+
+`piprinter-jira-poll.service` and `piprinter-jira-poll.timer` run the poll on a systemd timer (every 15 minutes by default). To install:
+
+```bash
+sudo cp piprinter-jira-poll.service piprinter-jira-poll.timer /etc/systemd/system
+sudo systemctl daemon-reload
+sudo systemctl enable --now piprinter-jira-poll.timer
+```
+
+Be sure to edit `piprinter-jira-poll.service` first with the appropriate username, paths, and environment variables, same as `piprinter.service`. Since `jira-cli` auth is tied to the user running it, run the timer as the same user who ran `jira init`.

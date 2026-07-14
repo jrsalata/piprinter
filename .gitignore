@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# jira_poll.py state (locally tracked printed ticket keys)
+jira_poll_state.json
+
 # C extensions
 *.so
 

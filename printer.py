@@ -15,8 +15,7 @@ def load_printer(config_file="config.example.yaml"):
 
 def printer_status():
 
-    # paper_num = printer.paper_status()
-    paper_num = 2
+    paper_num = printer.paper_status()
     paper = "Unknown"
     if paper_num == 0:
         paper = "Out of paper"

@@ -277,6 +277,83 @@ button[type="submit"]:disabled { background: var(--muted); color: var(--bg); cur
   font-size: .85rem;
 }
 
+.template-controls {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--field-border);
+}
+
+.template-controls-actions {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+.btn-secondary,
+.btn-danger {
+  border-radius: 4px;
+  padding: .55rem 1rem;
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: var(--field);
+  color: var(--text);
+  border: 1px solid var(--field-border);
+}
+
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--bad);
+  border: 1px solid rgba(229,141,125,.4);
+}
+
+.btn-danger:hover { background: rgba(229,141,125,.12); }
+
+.image-preview {
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: 4px;
+  border: 1px solid var(--field-border);
+}
+
+.template-card {
+  position: relative;
+}
+
+.template-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.template-delete-btn {
+  position: absolute;
+  top: .7rem;
+  right: .7rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--field-border);
+  color: var(--text-dim);
+  border-radius: 50%;
+  font-size: .7rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.template-delete-btn:hover { border-color: var(--bad); color: var(--bad); }
+
 .builder-block {
   background: var(--field);
   border: 1px solid var(--field-border);

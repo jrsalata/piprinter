@@ -31,6 +31,17 @@
     % end
 
     <form id="builder-form">
+      <div class="template-controls">
+        <label>Template Name <span class="optional">(required to save)</span><br>
+          <input type="text" id="template-name" placeholder="e.g. Grocery List">
+        </label>
+        <div class="template-controls-actions">
+          <button type="button" id="save-new-btn" class="btn-secondary">Save Template</button>
+          <button type="button" id="update-btn" class="btn-secondary" style="display:none;">Update Template</button>
+          <button type="button" id="delete-btn" class="btn-danger" style="display:none;">Delete Template</button>
+        </div>
+      </div>
+
       <div id="add-block-row">
         <select id="block-type-select">
           <option value="title">Title</option>
@@ -177,7 +188,8 @@
   </template>
 
   <template id="fields-image">
-    <label>Image<br><input type="file" accept="image/*" data-field="image" required></label>
+    <label>Image<br><input type="file" accept="image/*" data-field="image"></label>
+    <img class="image-preview" style="display:none;">
     <label class="checkbox-row"><input type="checkbox" data-field="center" checked> Center</label>
   </template>
 
@@ -186,14 +198,65 @@
     const blockTemplate = document.getElementById('block-template');
     const typeLabels = { title: 'Title', text: 'Text', divider: 'Divider', newline: 'Blank Line', qr: 'QR Code', image: 'Image' };
 
-    function addBlock(type) {
+    // data (optional) prefills a block's fields/style from a saved template,
+    // e.g. { text: 'hi', style: { align: 'center' }, image: 'data:...' }
+    function addBlock(type, data = {}) {
+      const fieldsTemplate = document.getElementById('fields-' + type);
+      if (!fieldsTemplate) {
+        // Unknown block type (e.g. a hand-edited template file); skip it
+        // rather than throwing and leaving the form half-populated.
+        console.warn('Skipping unknown block type:', type);
+        return;
+      }
+
       const node = blockTemplate.content.cloneNode(true);
       const blockEl = node.querySelector('.builder-block');
       blockEl.dataset.type = type;
-      blockEl.querySelector('.block-type-label').textContent = typeLabels[type];
+      blockEl.querySelector('.block-type-label').textContent = typeLabels[type] || type;
 
-      const fieldsTemplate = document.getElementById('fields-' + type);
       blockEl.querySelector('.block-fields').appendChild(fieldsTemplate.content.cloneNode(true));
+
+      for (const input of blockEl.querySelectorAll('[data-field]')) {
+        const key = input.dataset.field;
+        if (!(key in data)) continue;
+        if (input.type === 'checkbox') {
+          input.checked = !!data[key];
+        } else if (input.type === 'file') {
+          if (data[key]) {
+            input.dataset.prefill = data[key];
+            const preview = blockEl.querySelector('.image-preview');
+            if (preview) {
+              preview.src = data[key];
+              preview.style.display = 'block';
+            }
+          }
+        } else {
+          input.value = data[key];
+        }
+      }
+
+      blockEl.querySelectorAll('[data-field="image"]').forEach(input => {
+        input.addEventListener('change', () => {
+          const file = input.files[0];
+          const preview = blockEl.querySelector('.image-preview');
+          if (!file || !preview) return;
+          delete input.dataset.prefill;
+          readImageAsDataUrl(file).then(dataUrl => {
+            preview.src = dataUrl;
+            preview.style.display = 'block';
+          });
+        });
+      });
+
+      if (data.style && Object.keys(data.style).length) {
+        for (const input of blockEl.querySelectorAll('[data-style]')) {
+          const key = input.dataset.style;
+          if (!(key in data.style)) continue;
+          const kind = input.dataset.styleType;
+          input.value = kind === 'bool' ? String(data.style[key]) : data.style[key];
+        }
+        blockEl.querySelector('.style-panel').open = true;
+      }
 
       blockEl.querySelector('.move-up').addEventListener('click', () => {
         const prev = blockEl.previousElementSibling;
@@ -211,6 +274,13 @@
     document.getElementById('add-block-btn').addEventListener('click', () => {
       addBlock(document.getElementById('block-type-select').value);
     });
+
+    function loadBlocksIntoForm(blocks) {
+      blockList.innerHTML = '';
+      for (const block of blocks) {
+        addBlock(block.type, block);
+      }
+    }
 
     function readImageAsDataUrl(file) {
       return new Promise((resolve, reject) => {
@@ -249,13 +319,22 @@
             block[key] = input.checked;
           } else if (input.type === 'file') {
             const file = input.files[0];
-            if (file) block[key] = await readImageAsDataUrl(file);
+            if (file) {
+              block[key] = await readImageAsDataUrl(file);
+            } else if (input.dataset.prefill) {
+              block[key] = input.dataset.prefill;
+            }
           } else if (input.type === 'number') {
             block[key] = parseInt(input.value, 10);
           } else {
             block[key] = input.value;
           }
         }
+
+        if (type === 'image' && !block.image) {
+          throw new Error('An image block is missing an image. Please choose a file.');
+        }
+
         blocks.push(block);
       }
       return blocks;
@@ -272,16 +351,17 @@
 
     document.getElementById('builder-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const blocks = await collectBlocks();
-      if (!blocks.length) {
-        showMessage('Add at least one block before printing.', true);
-        return;
-      }
 
       const printBtn = document.getElementById('print-btn');
       printBtn.disabled = true;
 
       try {
+        const blocks = await collectBlocks();
+        if (!blocks.length) {
+          showMessage('Add at least one block before printing.', true);
+          return;
+        }
+
         const res = await fetch('/builder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -299,6 +379,145 @@
         printBtn.disabled = false;
       }
     });
+
+    // --- Template CRUD (save/load/update/delete a named set of blocks) ---
+
+    const nameInput = document.getElementById('template-name');
+    const saveNewBtn = document.getElementById('save-new-btn');
+    const updateBtn = document.getElementById('update-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+    let currentTemplateId = null;
+
+    function setEditingState(id) {
+      currentTemplateId = id;
+      updateBtn.style.display = id ? '' : 'none';
+      deleteBtn.style.display = id ? '' : 'none';
+      saveNewBtn.textContent = id ? 'Save as New Template' : 'Save Template';
+    }
+
+    // Disable the template action buttons while a request is in flight so a
+    // double-click can't fire two overlapping saves/deletes.
+    function setTemplateButtonsDisabled(disabled) {
+      saveNewBtn.disabled = disabled;
+      updateBtn.disabled = disabled;
+      deleteBtn.disabled = disabled;
+    }
+
+    async function loadTemplate(id) {
+      try {
+        const res = await fetch(`/templates/${encodeURIComponent(id)}`);
+        if (!res.ok) {
+          showMessage('Template not found.', true);
+          return;
+        }
+        const tmpl = await res.json();
+        nameInput.value = tmpl.name;
+        loadBlocksIntoForm(tmpl.blocks);
+        setEditingState(tmpl.id);
+      } catch (err) {
+        showMessage(err.message, true);
+      }
+    }
+
+    saveNewBtn.addEventListener('click', async () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        showMessage('Enter a template name to save.', true);
+        return;
+      }
+
+      setTemplateButtonsDisabled(true);
+      try {
+        const blocks = await collectBlocks();
+        if (!blocks.length) {
+          showMessage('Add at least one block before saving.', true);
+          return;
+        }
+
+        const res = await fetch('/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, blocks }),
+        });
+        const result = await res.json();
+        if (res.ok) {
+          showMessage('Template saved!', false);
+          setEditingState(result.id);
+          history.replaceState(null, '', `/builder?id=${result.id}`);
+        } else {
+          showMessage(result.error || 'Failed to save template.', true);
+        }
+      } catch (err) {
+        showMessage(err.message, true);
+      } finally {
+        setTemplateButtonsDisabled(false);
+      }
+    });
+
+    updateBtn.addEventListener('click', async () => {
+      if (!currentTemplateId) return;
+      const name = nameInput.value.trim();
+      if (!name) {
+        showMessage('Enter a template name to save.', true);
+        return;
+      }
+
+      setTemplateButtonsDisabled(true);
+      try {
+        const blocks = await collectBlocks();
+        if (!blocks.length) {
+          showMessage('Add at least one block before saving.', true);
+          return;
+        }
+
+        const res = await fetch(`/templates/${encodeURIComponent(currentTemplateId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, blocks }),
+        });
+        const result = await res.json();
+        if (res.ok) {
+          showMessage('Template updated!', false);
+        } else {
+          showMessage(result.error || 'Failed to update template.', true);
+        }
+      } catch (err) {
+        showMessage(err.message, true);
+      } finally {
+        setTemplateButtonsDisabled(false);
+      }
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      if (!currentTemplateId) return;
+      if (!confirm('Delete this template? This cannot be undone.')) return;
+
+      setTemplateButtonsDisabled(true);
+      try {
+        const res = await fetch(`/templates/${encodeURIComponent(currentTemplateId)}`, { method: 'DELETE' });
+        if (res.ok) {
+          showMessage('Template deleted.', false);
+          nameInput.value = '';
+          blockList.innerHTML = '';
+          setEditingState(null);
+          history.replaceState(null, '', '/builder');
+        } else {
+          const result = await res.json();
+          showMessage(result.error || 'Failed to delete template.', true);
+        }
+      } catch (err) {
+        showMessage(err.message, true);
+      } finally {
+        setTemplateButtonsDisabled(false);
+      }
+    });
+
+    const initialTemplateId = new URLSearchParams(location.search).get('id');
+    if (initialTemplateId) {
+      loadTemplate(initialTemplateId);
+    } else {
+      setEditingState(null);
+    }
   </script>
 </body>
 

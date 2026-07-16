@@ -34,7 +34,62 @@
         <p>Build a ticket freely from titles, text, dividers, QR codes and images with your own styling.</p>
       </a>
     </div>
+
+    <div class="template-list" id="custom-template-list"></div>
   </div>
+
+  <script>
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function loadCustomTemplates() {
+      const container = document.getElementById('custom-template-list');
+      try {
+        const res = await fetch('/templates');
+        const data = await res.json();
+        const templates = data.templates || [];
+        if (!templates.length) return;
+
+        container.innerHTML = templates.map(t => {
+          const count = t.block_count || 0;
+          return `
+          <div class="template-card" data-id="${escapeHtml(t.id)}">
+            <a class="template-card-link" href="/builder?id=${encodeURIComponent(t.id)}">
+              <h2>${escapeHtml(t.name)}</h2>
+              <p>${count} block${count === 1 ? '' : 's'}</p>
+            </a>
+            <button type="button" class="template-delete-btn" title="Delete template">&#10005;</button>
+          </div>
+        `;
+        }).join('');
+
+        container.querySelectorAll('.template-delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const card = btn.closest('.template-card');
+            const id = card.dataset.id;
+            if (!confirm('Delete this template? This cannot be undone.')) return;
+            try {
+              const res = await fetch(`/templates/${encodeURIComponent(id)}`, { method: 'DELETE' });
+              if (res.ok) {
+                card.remove();
+              } else {
+                alert('Failed to delete template.');
+              }
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        });
+      } catch (err) {
+        // Custom templates are optional; ignore load failures.
+      }
+    }
+
+    loadCustomTemplates();
+  </script>
 </body>
 
 </html>

@@ -8,7 +8,7 @@ from escpos.printer import Dummy
 # that requested a one-off style, so later blocks aren't affected by it.
 STYLE_RESET_DEFAULTS = {
     'align': 'left',
-    'font': 'A',
+    'font': 'a',
     'bold': False,
     'underline': 0,
     'invert': False,
@@ -62,7 +62,7 @@ class PreprocessBuilder:
         self.printer.ln(count=count)
 
     def add_divider(self):
-        self.printer.textln("-" * 32)
+        self.printer.textln("-" * 24)
 
     def add_text_block(self, text):
         self.printer.textln(text)

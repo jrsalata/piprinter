@@ -35,7 +35,7 @@ def print_blocks(blocks):
         return False, "No blocks to print"
 
     try:
-        builder = PreprocessBuilder()
+        builder = PreprocessBuilder(profile=printer.profile)
         builder.build_from_blocks(blocks)
         output = builder.get_commands()
 

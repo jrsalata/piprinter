@@ -4,6 +4,14 @@ from io import BytesIO
 from PIL import Image
 from escpos.printer import Dummy
 
+# Fallback max image width (in dots) used when the printer's profile doesn't
+# declare a media width (e.g. the default profile, or no `profile:` set in
+# config.yaml). Matches the printable width of common 58mm thermal printers.
+# Without some cap, an oversized image is sent to the printer with a raster
+# width the hardware doesn't expect, and many printers respond by dumping the
+# raw image bytes as garbled text instead of rendering the image.
+DEFAULT_MAX_IMAGE_WIDTH = 384
+
 # Style properties that get reset back to a sane default after a block
 # that requested a one-off style, so later blocks aren't affected by it.
 STYLE_RESET_DEFAULTS = {
@@ -40,8 +48,14 @@ TITLE_DEFAULT_STYLE = {
 # - text blocks
 # - qr codes
 class PreprocessBuilder:
-    def __init__(self):
+    # profile, if given, should be an already-resolved escpos printer profile
+    # object (e.g. the real printer's `.profile`), not a profile name string -
+    # it's assigned directly rather than re-resolved by name so callers can
+    # hand over whatever profile instance the actual printer is using.
+    def __init__(self, profile=None):
         self.printer = Dummy()
+        if profile is not None:
+            self.printer.profile = profile
 
     def add_title(self, title):
         self.printer.textln(title)
@@ -69,7 +83,24 @@ class PreprocessBuilder:
 
     # Note that image_path should be a PIL image object, not a file path
     def add_image(self, image_path, center = True):
+        image_path = self._fit_image_to_printer(image_path)
         self.printer.image(image_path, center=center)
+
+    # Downscale an image to the printer's known media width, preserving
+    # aspect ratio, so it never gets sent to the printer wider than the
+    # hardware can render.
+    def _fit_image_to_printer(self, image):
+        max_width = self._max_image_width()
+        if image.width <= max_width:
+            return image
+        new_height = max(1, round(image.height * (max_width / image.width)))
+        return image.resize((max_width, new_height), Image.LANCZOS)
+
+    def _max_image_width(self):
+        try:
+            return int(self.printer.profile.profile_data["media"]["width"]["pixels"])
+        except (KeyError, ValueError):
+            return DEFAULT_MAX_IMAGE_WIDTH
 
     def add_qr_code(self, data, size=3, center = True):
         self.printer.qr(data, size=size, center=center)

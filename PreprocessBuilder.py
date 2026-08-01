@@ -6,11 +6,11 @@ from escpos.printer import Dummy
 
 # Fallback max image width (in dots) used when the printer's profile doesn't
 # declare a media width (e.g. the default profile, or no `profile:` set in
-# config.yaml). Matches the printable width of common 58mm thermal printers.
+# config.yaml). Matches the printable width of common 80mm thermal printers.
 # Without some cap, an oversized image is sent to the printer with a raster
 # width the hardware doesn't expect, and many printers respond by dumping the
 # raw image bytes as garbled text instead of rendering the image.
-DEFAULT_MAX_IMAGE_WIDTH = 384
+DEFAULT_MAX_IMAGE_WIDTH = 576
 
 # Style properties that get reset back to a sane default after a block
 # that requested a one-off style, so later blocks aren't affected by it.

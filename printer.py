@@ -37,6 +37,7 @@ def print_blocks(blocks):
     try:
         builder = PreprocessBuilder(profile=printer.profile)
         builder.build_from_blocks(blocks)
+        builder.add_timestamp_footer()
         output = builder.get_commands()
 
         printer.open()

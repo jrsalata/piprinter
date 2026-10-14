@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 from io import BytesIO
 
 from PIL import Image
@@ -27,6 +28,12 @@ STYLE_RESET_DEFAULTS = {
     'custom_size': False,
     'normal_textsize': True,
 }
+
+# Style keys that change the text size.
+SIZE_STYLE_KEYS = {'double_width', 'double_height', 'custom_size', 'width', 'height'}
+
+# Width of the small divider printed above the timestamp footer.
+FOOTER_DIVIDER_WIDTH = 12
 
 # Default style for title blocks, overridable per-key by a block's own style.
 TITLE_DEFAULT_STYLE = {
@@ -65,6 +72,12 @@ class PreprocessBuilder:
 
     def reset_properties(self, style):
         reset = {k: v for k, v in STYLE_RESET_DEFAULTS.items() if k in style}
+        # Escpos.set() only sends a text-size command when normal_textsize,
+        # double_width/height or custom_size is truthy, so resetting
+        # double_width=False alone is a no-op and the large size sticks for
+        # every following block. Explicitly ask for normal size.
+        if SIZE_STYLE_KEYS & style.keys():
+            reset['normal_textsize'] = True
         if reset:
             self.printer.set(**reset)
 
@@ -77,6 +90,14 @@ class PreprocessBuilder:
 
     def add_divider(self):
         self.printer.textln("-" * 24)
+
+    # Small centered divider followed by the time the receipt was printed.
+    def add_timestamp_footer(self, now=None):
+        now = now or datetime.now()
+        self.printer.set(align='center', normal_textsize=True, bold=False)
+        self.printer.textln("-" * FOOTER_DIVIDER_WIDTH)
+        self.printer.textln(now.strftime("%Y-%m-%d %H:%M:%S"))
+        self.printer.set(align='left')
 
     def add_text_block(self, text):
         self.printer.textln(text)

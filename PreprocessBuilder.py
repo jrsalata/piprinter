@@ -54,6 +54,7 @@ TITLE_DEFAULT_STYLE = {
 # - images
 # - text blocks
 # - qr codes
+# - barcodes
 class PreprocessBuilder:
     # profile, if given, should be an already-resolved escpos printer profile
     # object (e.g. the real printer's `.profile`), not a profile name string -
@@ -126,9 +127,12 @@ class PreprocessBuilder:
     def add_qr_code(self, data, size=3, center = True):
         self.printer.qr(data, size=size, center=center)
 
+    def add_barcode(self, data, bc='CODE128', height=64, width=3, pos='BELOW', font='A', center=True):
+        self.printer.barcode(data, bc, height=height, width=width, pos=pos, font=font, align_ct=center)
+
     # Builds a print job from an ordered list of block dicts, e.g.:
     # {"type": "text", "text": "hello", "style": {"align": "center", "bold": true}}
-    # Supported types: title, divider, text, newline, qr, image
+    # Supported types: title, divider, text, newline, qr, barcode, image
     # "style" is optional on any block and accepts the same keys as set_properties().
     # The style is applied before the block and reset back to defaults after it,
     # so it never bleeds into later blocks.
@@ -153,6 +157,16 @@ class PreprocessBuilder:
                 self.add_newline(count=block.get('count', 1))
             elif block_type == 'qr':
                 self.add_qr_code(block.get('data', ''), size=block.get('size', 3), center=block.get('center', True))
+            elif block_type == 'barcode':
+                self.add_barcode(
+                    block.get('data', ''),
+                    bc=block.get('bc', 'CODE128'),
+                    height=block.get('height', 64),
+                    width=block.get('width', 3),
+                    pos=block.get('pos', 'BELOW'),
+                    font=block.get('font', 'A'),
+                    center=block.get('center', True),
+                )
             elif block_type == 'image':
                 image = self._decode_image(block.get('image', ''))
                 if image is not None:

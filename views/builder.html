@@ -49,6 +49,7 @@
           <option value="divider">Divider</option>
           <option value="newline">Blank Line</option>
           <option value="qr">QR Code</option>
+          <option value="barcode">Barcode</option>
           <option value="image">Image</option>
         </select>
         <button type="button" id="add-block-btn">Add Block</button>
@@ -187,6 +188,35 @@
     </div>
   </template>
 
+  <template id="fields-barcode">
+    <label>Data<br><input type="text" data-field="data" placeholder="Value to encode" required></label>
+    <div class="field-row">
+      <label>Type
+        <select data-field="bc">
+          <option value="CODE128" selected>CODE128</option>
+          <option value="CODE39">CODE39</option>
+          <option value="EAN13">EAN13</option>
+          <option value="EAN8">EAN8</option>
+          <option value="UPC-A">UPC-A</option>
+          <option value="ITF">ITF</option>
+        </select>
+      </label>
+      <label>Height<br><input type="number" data-field="height" min="1" max="255" value="64"></label>
+      <label>Width<br><input type="number" data-field="width" min="1" max="6" value="3"></label>
+    </div>
+    <div class="field-row">
+      <label>Text Position
+        <select data-field="pos">
+          <option value="BELOW" selected>Below</option>
+          <option value="ABOVE">Above</option>
+          <option value="BOTH">Both</option>
+          <option value="OFF">Off</option>
+        </select>
+      </label>
+      <label class="checkbox-row"><input type="checkbox" data-field="center" checked> Center</label>
+    </div>
+  </template>
+
   <template id="fields-image">
     <label>Image<br><input type="file" accept="image/*" data-field="image"></label>
     <img class="image-preview" style="display:none;">
@@ -196,7 +226,7 @@
   <script>
     const blockList = document.getElementById('block-list');
     const blockTemplate = document.getElementById('block-template');
-    const typeLabels = { title: 'Title', text: 'Text', divider: 'Divider', newline: 'Blank Line', qr: 'QR Code', image: 'Image' };
+    const typeLabels = { title: 'Title', text: 'Text', divider: 'Divider', newline: 'Blank Line', qr: 'QR Code', barcode: 'Barcode', image: 'Image' };
 
     // data (optional) prefills a block's fields/style from a saved template,
     // e.g. { text: 'hi', style: { align: 'center' }, image: 'data:...' }

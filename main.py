@@ -6,7 +6,7 @@ from templates_store import TemplateStore
 # Block types the builder can construct and PreprocessBuilder can render.
 # Templates referencing anything else are rejected so a bad template can't
 # be persisted and then crash the builder form when it's loaded back.
-KNOWN_BLOCK_TYPES = {'title', 'text', 'divider', 'newline', 'qr', 'image'}
+KNOWN_BLOCK_TYPES = {'title', 'text', 'divider', 'newline', 'qr', 'barcode', 'image'}
 
 # Initialized at import time (not just under __main__) so the /templates
 # routes work under any WSGI host, e.g. `gunicorn main:app`.
